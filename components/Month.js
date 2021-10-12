@@ -4,8 +4,8 @@ import Day from './Day';
 
 /* colors to use */
 const colors = {
-    lightModeBackground: '#D8F6E0',
-    lightModeTile: '#FAFFFA',
+    lightModeBackground: '#D8F6E0', //e3fceb    FAFFFA
+    lightModeTile: '#f0fff5',
     lightModeText: '#4A6050',
 };
 

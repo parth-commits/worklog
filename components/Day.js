@@ -5,7 +5,7 @@ import { StyleSheet, Text, View, Dimensions } from 'react-native';
 /* colors to use */
 const colors = {
     lightModeBackground: '#D8F6E0',
-    lightModeTile: '#FAFFFA',// F5FFF6  FFFFFF
+    lightModeTile: '#f0fff5',// F5FFF6  FFFFFF
     lightModeText: '#4A6050',
 };
 
