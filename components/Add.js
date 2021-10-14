@@ -40,6 +40,32 @@ const hourNumberMapping = {
     '23': '11',
     '24': '12',
 }
+const hourAMPMMapping = {
+    '01': 'am',
+    '02': 'am',
+    '03': 'am',
+    '04': 'am',
+    '05': 'am',
+    '06': 'am',
+    '07': 'am',
+    '08': 'am',
+    '09': 'am',
+    '10': 'am',
+    '11': 'am',
+    '12': 'pm',
+    '13': 'pm',
+    '14': 'pm',
+    '15': 'pm',
+    '16': 'pm',
+    '17': 'pm',
+    '18': 'pm',
+    '19': 'pm',
+    '20': 'pm',
+    '21': 'pm',
+    '22': 'pm',
+    '23': 'pm',
+    '24': 'am',
+}
 const dateToDayMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const numberMappingTo2Digits = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31'];
 
@@ -180,7 +206,7 @@ const Add = (props) => {
                     <View style={styles.addModalEntryList}>
                         <Image style={styles.addModalIcons} source={require('../assets/images/TimeIcon.png')}></Image>
                         <TouchableOpacity style={styles.addModalDateEntry} onPress={() => showMode('time')}>
-                        <Text style={styles.addModalDateText}>{hour24}:{minute}</Text>
+                        <Text style={styles.addModalDateText}>{hour12}:{minute}{hourAMPMMapping[hour24]}</Text>
                         </TouchableOpacity>
                     </View>
                     <View style={{height: 40}}></View>
@@ -188,7 +214,7 @@ const Add = (props) => {
                     <View style={styles.addModalEntryList}>
                         <Image style={styles.addModalIcons} source={require('../assets/images/TimeIcon.png')}></Image>
                         <TouchableOpacity style={styles.addModalDateEntry} onPress={() => showMode2()}>
-                            <Text style={styles.addModalDateText}>{endhour24}:{endminute}</Text>
+                            <Text style={styles.addModalDateText}>{endhour12}:{endminute}{hourAMPMMapping[endhour24]}</Text>
                         </TouchableOpacity>
                     </View>
                     
@@ -206,6 +232,7 @@ const Add = (props) => {
                         <Pressable
                         style={[styles.button, styles.buttonClose]}
                         onPress={() => onSave()}
+                        disabled={(Math.round(((parseInt(endhour24)*60 + parseInt(endminute))-(parseInt(hour24)*60 + parseInt(minute)))/6)/10)<0}
                         >
                             <Text style={styles.textStyle}> Save </Text>
                         </Pressable>

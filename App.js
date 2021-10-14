@@ -132,6 +132,9 @@ export default function App() {
     console.log(workLogObj);
   };
 
+  const onPressExport = () => {
+    (Object.keys(workLogObj).length > 0) ? setExportModalVisible(true) : setExportModalVisible(false);
+  }
 
   /* If fonts havent loaded, returns loading screen, else returns real screen */
   if (!fontsLoaded || !loadedData) {
@@ -141,7 +144,7 @@ export default function App() {
       <SafeAreaView style={styles.pageStyle}>
         {addModalVisible && (<Add storeData={storeData} refreshList={refreshList} setrefreshList={setrefreshList} workLogObj={workLogObj} setworkLogObj={setworkLogObj} addModalVisible={addModalVisible} setAddModalVisible={setAddModalVisible}></Add>)}
         {infoModalVisible && (<Info infoModalVisible={infoModalVisible} setInfoModalVisible={setInfoModalVisible}></Info>)}
-        {exportModalVisible && (<Export workLogObj={workLogObj} exportModalVisible={exportModalVisible} setExportModalVisible={setExportModalVisible}></Export>)}
+        { (Object.keys(workLogObj).length > 0) && exportModalVisible && (<Export workLogObj={workLogObj} exportModalVisible={exportModalVisible} setExportModalVisible={setExportModalVisible}></Export>)}
 
         <Text style={styles.appTitle}>Work Log</Text>
         <FlatList data={Object.keys(workLogObj).sort(function(a, b){return b-a})} renderItem={renderItem} keyExtractor={item => item} extraData={refreshList} />
@@ -153,7 +156,7 @@ export default function App() {
               </View>
               <Text numberOfLines={1} adjustsFontSizeToFit  style={styles.navBarText}>Info</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.navBarButton}  activeOpacity={0.7} onPress={() => setExportModalVisible(true)}>
+            <TouchableOpacity style={styles.navBarButton}  activeOpacity={0.7} onPress={() => onPressExport()}>
               <View style={styles.navBarButtonIcon}>
                 <Image style={styles.navBarButtonIconImage} source={require('./assets/images/ExportIcon.png')}></Image>
               </View>

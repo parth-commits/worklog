@@ -4,6 +4,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import XLSX from 'xlsx';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import RNPickerSelect from 'react-native-picker-select';
 /* Device dimensions, use to optimize for device of all sizes */
 const width = Dimensions.get('window').width;
 const height = Dimensions.get('window').height;
@@ -14,7 +15,20 @@ const colors = {
     lightModeTile: '#FAFFFA',
     lightModeText: '#4A6050',
 };
-
+const monthNumberMapping = {
+    '01': 'January',
+    '02': 'February',
+    '03': 'March',
+    '04': 'April',
+    '05': 'May',
+    '06': 'June',
+    '07': 'July',
+    '08': 'August',
+    '09': 'September',
+    '10': 'October',
+    '11': 'November',
+    '12': 'December',
+}
 
 const hourNumberMapping = {
     '01': '01',
@@ -70,6 +84,28 @@ const hourAMPMMapping = {
 }
 const Export = (props) => {
 
+    const [selectedMonth, setSelectedMonth] = useState(Object.keys(props.workLogObj).sort(function(a, b){return b-a})[0]);
+    const [wordedMonth, setWordedMonth] = useState(monthNumberMapping[Object.keys(props.workLogObj).sort(function(a, b){return b-a})[0].slice(4,6)] + ', ' + Object.keys(props.workLogObj).sort(function(a, b){return b-a})[0].slice(0,4));
+
+    const onChangeMonthFunc = (newMonth) => {
+        setSelectedMonth(newMonth);
+        setWordedMonth(monthNumberMapping[newMonth.slice(4,6)] + ', ' + newMonth.slice(0,4));
+    }
+
+    const getPickerObject = () => {
+        let monthKeys = Object.keys(props.workLogObj).sort(function(a, b){return b-a});
+        let objList = [];
+        monthKeys.forEach(month => {
+            let l = monthNumberMapping[month.slice(4,6)] + ', ' + month.slice(0,4);
+            let v = month;
+            let pushObj = {
+                label: l,
+                value: v,
+            };
+            objList.push(pushObj);
+        });
+        return objList;
+    }
 
     const exportFunc = async (workobj, month) => {
         // console.log(workobj);
@@ -139,12 +175,21 @@ const Export = (props) => {
                 <View style={styles.modalView}>
                     <Text style={styles.infoModalTitle}>Export</Text>
                     <View style={styles.scrollV}>
-                    <ScrollView>
-                        <View style={styles.infoModalItem}>
+                        <ScrollView>
+                            <View style={styles.infoModalItem}>
+                                
+                                <Text style={styles.infoModalItemText}>Select a Month to export and then press Export button to export to an Excel file.</Text>
+                            </View>
+                            <View style={styles.selectMonth}>
+                                <RNPickerSelect
+                                    onValueChange={(value) => onChangeMonthFunc(value)}
+                                    items={getPickerObject()}
+                                >
+                                    <Text style={styles.selectedMonthText}>{wordedMonth}</Text>
+                                </RNPickerSelect>
+                            </View>
                             
-                            <Text style={styles.infoModalItemText}>Select a Month to export and then press Export button to export to an Excel file.</Text>
-                        </View>
-                    </ScrollView>
+                        </ScrollView>
                     </View>
                     
                     
@@ -157,7 +202,7 @@ const Export = (props) => {
                         </Pressable>
                         <Pressable
                         style={[styles.button, styles.buttonClose]}
-                        onPress={() => exportFunc(props.workLogObj, months[0])}
+                        onPress={() => exportFunc(props.workLogObj, selectedMonth)}
                         >
                             <Text style={styles.textStyle}>Export</Text>
                         </Pressable>
@@ -170,6 +215,21 @@ const Export = (props) => {
 
 
 const styles = StyleSheet.create({
+    selectMonth: {
+        marginTop: 20,
+        width: width - 40- 70,
+        height: 50,
+        borderWidth: 4,
+        borderColor: colors.lightModeText,
+        borderRadius: 15,
+        justifyContent: 'center',
+        paddingLeft: 10,
+    },
+    selectedMonthText: {
+        color: colors.lightModeText,
+        fontSize: 30,
+        fontFamily: 'mp-medium',
+    },
     inlineImg: {
         width: 20,
         height: 20,
@@ -181,7 +241,7 @@ const styles = StyleSheet.create({
         height: height*0.55,
     },
     infoModalItemText: {
-        fontSize: 15,
+        fontSize: 20,
         fontFamily: 'mp-medium',
         color: colors.lightModeText,
     },

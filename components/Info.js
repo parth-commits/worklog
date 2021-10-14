@@ -49,7 +49,7 @@ const Info = (props) => {
                         <View style={styles.infoModalItem}>
                             <Text style={styles.infoModalItemTitle}>About the developer</Text>
                             <Text style={styles.infoModalItemText}>This App was made by Parth Patel. </Text>
-                            <Text style={styles.infoModalItemText}>Made with <Image style={styles.inlineImg} source={require('../assets/images/heartIcon.png')}></Image> in Toronto </Text>
+                            <Text style={styles.infoModalItemText}>Made with <Image style={styles.inlineImg} source={require('../assets/images/heartIcon.png')}></Image> in Canada </Text>
                         </View>
                     </ScrollView>
                     </View>
