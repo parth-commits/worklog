@@ -82,12 +82,12 @@ const Add = (props) => {
     const [monthNumber, setmonthNumber] = useState(numberMappingTo2Digits[d.getMonth()+1]);
     const [yearNumber, setYearNumber] = useState(d.getFullYear());
     const [hour24, setHour24] = useState(numberMappingTo2Digits[d.getHours()]);
-    const [hour12, setHour12] = useState(hourNumberMapping[d.getHours()]);
+    const [hour12, setHour12] = useState(hourNumberMapping[d.getHours()]||d.getHours());
     const [minute, setMinutes] = useState(numberMappingTo2Digits[d.getMinutes()]||d.getMinutes());
     const [endhour24, setEndHour24] = useState(numberMappingTo2Digits[d.getHours()]);
-    const [endhour12, setEndHour12] = useState(hourNumberMapping[d.getHours()]);
+    const [endhour12, setEndHour12] = useState(hourNumberMapping[d.getHours()]||d.getHours());
     const [endminute, setEndMinutes] = useState(numberMappingTo2Digits[d.getMinutes()]||d.getMinutes());
-    
+    console.log(hourNumberMapping[d.getHours()]);
     const showMode = (currentMode) => {
         setShow(true);
         setMode(currentMode);
