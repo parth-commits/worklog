@@ -5,6 +5,7 @@ import XLSX from 'xlsx';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import RNPickerSelect from 'react-native-picker-select';
+import DateTimePicker from '@react-native-community/datetimepicker'
 /* Device dimensions, use to optimize for device of all sizes */
 const width = Dimensions.get('window').width;
 const height = Dimensions.get('window').height;
@@ -15,6 +16,8 @@ const colors = {
     lightModeTile: '#FAFFFA',
     lightModeText: '#4A6050',
 };
+const numberMappingTo2Digits = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31'];
+
 const monthNumberMapping = {
     '01': 'January',
     '02': 'February',
@@ -87,12 +90,43 @@ const Export = (props) => {
     const [selectedMonth, setSelectedMonth] = useState(Object.keys(props.workLogObj).sort(function(a, b){return b-a})[0]);
     const [wordedMonth, setWordedMonth] = useState(monthNumberMapping[Object.keys(props.workLogObj).sort(function(a, b){return b-a})[0].slice(4,6)] + ', ' + Object.keys(props.workLogObj).sort(function(a, b){return b-a})[0].slice(0,4));
 
+    const [show, setShow] = useState(false);
+    const [show2, setShow2] = useState(false);
+
+    const [date, setDate] = useState(new Date());
+    const [date2, setDate2] = useState(new Date());
+    const [mode, setMode] = useState('date');
+    
+    const showMode = (currentMode) => {
+        setShow(true);
+        setMode(currentMode);
+    }
+    const showMode2 = (currentMode) => {
+        setShow2(true);
+        setMode(currentMode);
+    }
+
     const onChangeMonthFunc = (newMonth) => {
         setSelectedMonth(newMonth);
         setWordedMonth(monthNumberMapping[newMonth.slice(4,6)] + ', ' + newMonth.slice(0,4));
     }
+    /* Sets the starting time and its states */
+    const onChange = (event, selectedDate) => {
+        console.log(selectedDate);
+        const currentDate = selectedDate || date;
+        setShow(Platform.OS === 'ios');
+        setDate(currentDate);
+    }
 
-    const getPickerObject = () => {
+    /* Sets the ending time */
+    const onChange2 = (event, selectedDate) => {
+        console.log(selectedDate);
+        const currentDate = selectedDate || date2;
+        setShow2(Platform.OS === 'ios');
+        setDate2(currentDate);
+
+    }
+    /*const getPickerObject = () => {
         let monthKeys = Object.keys(props.workLogObj).sort(function(a, b){return b-a});
         let objList = [];
         monthKeys.forEach(month => {
@@ -105,12 +139,15 @@ const Export = (props) => {
             objList.push(pushObj);
         });
         return objList;
-    }
+    }*/
 
-    const exportFunc = async (workobj, month) => {
+    const exportFunc = async (workobj) => {
         // console.log(workobj);
         // console.log(month);
-        let data = makeSmallerObj(workobj, month);
+        let data = makeSmallerObj(workobj);
+        if (data === false) {
+            return;
+        }
         let ws = XLSX.utils.json_to_sheet(data);
         let wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Work Log Data");
@@ -118,7 +155,7 @@ const Export = (props) => {
         type: 'base64',
         bookType: "xlsx"
         });
-        const uri = FileSystem.cacheDirectory + `${month}.xlsx`;
+        const uri = FileSystem.cacheDirectory + `${date.toDateString()} to ${date2.toDateString()}.xlsx`;
         // console.log(`Writing to ${JSON.stringify(uri)} with text: ${wbout}`);
         await FileSystem.writeAsStringAsync(uri, wbout, {
         encoding: FileSystem.EncodingType.Base64
@@ -126,42 +163,125 @@ const Export = (props) => {
 
         await Sharing.shareAsync(uri, {
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        dialogTitle: 'MyWater data',
+        dialogTitle: 'Work Log Data',
         UTI: 'com.microsoft.excel.xlsx'
         });
         props.setExportModalVisible(!props.exportModalVisible);
     }
 
-    const makeSmallerObj = (workobj, month) => {
-        let returnObj = [];
-        let temp = workobj[month][0];
-        let keys = Object.keys(temp).sort(function(a, b){return b-a});
-        for (let i = 0; i < keys.length; i++) {
-            let startHour = temp[keys[i]][1].slice(0,2);
-            let startMin = temp[keys[i]][1].slice(2,4);
-            let endHour = temp[keys[i]][2].slice(0,2);
-            let endMin = temp[keys[i]][2].slice(2,4);
-            let temp2 = {
-                "date": month.slice(0,4) + '/' + month.slice(4,6) + '/' + keys[i],
-                "day": temp[keys[i]][0],
-                "start": hourNumberMapping[startHour] + ':' + startMin + hourAMPMMapping[startHour],
-                "end": hourNumberMapping[endHour] + ':' + endMin + hourAMPMMapping[endHour],
-                "total": temp[keys[i]][3],
-            };
-            returnObj.push(temp2);
+    const makeSmallerObj = (workobj) => {
+        // if date is after date2 (ie -time), dont do anything and return
+        if (date >= date2) {
+            props.setExportModalVisible(!props.exportModalVisible);
+            return false;
         }
+        const startDay = numberMappingTo2Digits[date.getDate()];
+        const startYearMonth = date.getFullYear().toString() + (date.getMonth() + 1).toString();
+        //const startYear = date.getFullYear();
+        const endDay = numberMappingTo2Digits[date2.getDate()];
+        const endYearMonth =  date2.getFullYear().toString() + (date2.getMonth() + 1).toString();
+        console.log(startDay);
+        console.log(startYearMonth);
+        console.log(endDay);
+        console.log(endYearMonth);
+
+        let monthKeys = Object.keys(props.workLogObj).sort(function(a, b){return b-a});
+
+        let returnObj = [];
+        let totalHours = 0;
+        //let temp = workobj[month][0];
+        monthKeys.forEach(monthKey => {
+            let dateKeys = Object.keys(workobj[monthKey][0]).sort(function(a, b){return b-a});
+            let monthObj = props.workLogObj[monthKey][0];
+            // if same month-year, then we have to check dates differently
+            if (monthKey === startYearMonth && monthKey === endYearMonth) {
+                dateKeys.forEach(day => {
+                    if (day <= endDay && day >= startDay) {
+                        // add it
+                        let startHour = monthObj[day][1].slice(0,2);
+                        let startMin = monthObj[day][1].slice(2,4);
+                        let endHour = monthObj[day][2].slice(0,2);
+                        let endMin = monthObj[day][2].slice(2,4);
+                        let temp2 = {
+                            "date": monthKey.slice(0,4) + '/' + monthKey.slice(4,6) + '/' + day,
+                            "day": monthObj[day][0],
+                            "start": hourNumberMapping[startHour] + ':' + startMin + hourAMPMMapping[startHour],
+                            "end": hourNumberMapping[endHour] + ':' + endMin + hourAMPMMapping[endHour],
+                            "total": monthObj[day][3],
+                        };
+                        totalHours += monthObj[day][3];
+                        returnObj.push(temp2);
+                    }
+                });
+            } else if (monthKey == endYearMonth) { // its end month
+                dateKeys.forEach(day => {
+                    if (day <= endDay) {
+                        // add it
+                        let startHour = monthObj[day][1].slice(0,2);
+                        let startMin = monthObj[day][1].slice(2,4);
+                        let endHour = monthObj[day][2].slice(0,2);
+                        let endMin = monthObj[day][2].slice(2,4);
+                        let temp2 = {
+                            "date": monthKey.slice(0,4) + '/' + monthKey.slice(4,6) + '/' + day,
+                            "day": monthObj[day][0],
+                            "start": hourNumberMapping[startHour] + ':' + startMin + hourAMPMMapping[startHour],
+                            "end": hourNumberMapping[endHour] + ':' + endMin + hourAMPMMapping[endHour],
+                            "total": monthObj[day][3],
+                        };
+                        totalHours += monthObj[day][3];
+                        returnObj.push(temp2);
+                    }
+                });
+            } else if (monthKey == startYearMonth) { // its start month
+                dateKeys.forEach(day => {
+                    if (day >= startDay) {
+                        // add it
+                        let startHour = monthObj[day][1].slice(0,2);
+                        let startMin = monthObj[day][1].slice(2,4);
+                        let endHour = monthObj[day][2].slice(0,2);
+                        let endMin = monthObj[day][2].slice(2,4);
+                        let temp2 = {
+                            "date": monthKey.slice(0,4) + '/' + monthKey.slice(4,6) + '/' + day,
+                            "day": monthObj[day][0],
+                            "start": hourNumberMapping[startHour] + ':' + startMin + hourAMPMMapping[startHour],
+                            "end": hourNumberMapping[endHour] + ':' + endMin + hourAMPMMapping[endHour],
+                            "total": monthObj[day][3],
+                        };
+                        totalHours += monthObj[day][3];
+                        returnObj.push(temp2);
+                    }
+                });
+            } else if (monthKey > startYearMonth && monthKey < endYearMonth) { // its inbetween
+                dateKeys.forEach(day => {
+                    // add all days
+                    let startHour = monthObj[day][1].slice(0,2);
+                    let startMin = monthObj[day][1].slice(2,4);
+                    let endHour = monthObj[day][2].slice(0,2);
+                    let endMin = monthObj[day][2].slice(2,4);
+                    let temp2 = {
+                        "date": monthKey.slice(0,4) + '/' + monthKey.slice(4,6) + '/' + day,
+                        "day": monthObj[day][0],
+                        "start": hourNumberMapping[startHour] + ':' + startMin + hourAMPMMapping[startHour],
+                        "end": hourNumberMapping[endHour] + ':' + endMin + hourAMPMMapping[endHour],
+                        "total": monthObj[day][3],
+                    };
+                    totalHours += monthObj[day][3];
+                    returnObj.push(temp2);
+                });
+            }
+        });
+        
         let finalCol = {
             "date": 'Total hours',
             "day": '',
             "start": '',
             "end": '',
-            "total": workobj[month][1],
+            "total": totalHours,
         }
         returnObj.push(finalCol);
         return returnObj;
     }
-    let months = Object.keys(props.workLogObj).sort(function(a, b){return b-a});
-    //let keyys = Object.keys(props.workLogObj[months[0]][0]).sort(function(a, b){return b-a});
+
     return (
         <Modal
           animationType="fade"
@@ -178,17 +298,24 @@ const Export = (props) => {
                         <ScrollView>
                             <View style={styles.infoModalItem}>
                                 
-                                <Text style={styles.infoModalItemText}>Select a Month to export and then press Export button to export to an Excel file.</Text>
-                            </View>
-                            <View style={styles.selectMonth}>
-                                <RNPickerSelect
-                                    onValueChange={(value) => onChangeMonthFunc(value)}
-                                    items={getPickerObject()}
-                                >
-                                    <Text style={styles.selectedMonthText}>{wordedMonth}</Text>
-                                </RNPickerSelect>
+                                <Text style={styles.infoModalItemText}>Select start date and end date then press Export button to export to an Excel file.</Text>
                             </View>
                             
+                            <Text style={styles.addModalText}>Start</Text>
+                            <View style={styles.addModalEntryList}>
+                                <Image style={styles.addModalIcons} source={require('../assets/images/DateIcon.png')}></Image>
+                                <TouchableOpacity style={styles.addModalDateEntry} onPress={() => showMode('date')}>
+                                    <Text style={styles.addModalDateText}>{date.toDateString()}</Text>
+                                </TouchableOpacity>
+                            </View>
+                            
+                            <Text style={styles.addModalText}>Finish</Text>
+                            <View style={styles.addModalEntryList}>
+                                <Image style={styles.addModalIcons} source={require('../assets/images/DateIcon.png')}></Image>
+                                <TouchableOpacity style={styles.addModalDateEntry} onPress={() => showMode2('date')}>
+                                    <Text style={styles.addModalDateText}>{date2.toDateString()}</Text>
+                                </TouchableOpacity>
+                            </View>
                         </ScrollView>
                     </View>
                     
@@ -202,19 +329,74 @@ const Export = (props) => {
                         </Pressable>
                         <Pressable
                         style={[styles.button, styles.buttonClose]}
-                        onPress={() => exportFunc(props.workLogObj, selectedMonth)}
+                        onPress={() => exportFunc(props.workLogObj)}
                         >
                             <Text style={styles.textStyle}>Export</Text>
                         </Pressable>
                     </View>
                 </View>
             </View>
+            {show && (<DateTimePicker
+                testID='dateTimePicker'
+                value={date}
+                mode={mode}
+                is24Hour={false}
+                display='default'
+                onChange={onChange}
+                />)}
+            
+            {show2 && (<DateTimePicker
+                testID='dateTimePicker'
+                value={date2}
+                mode={mode}
+                is24Hour={false}
+                display='default'
+                onChange={onChange2}
+                />)}
         </Modal>
     );
 }
-
+// show2 == start (onchange2)
+// show1 == finish (onchange)
 
 const styles = StyleSheet.create({
+    
+    addModalText: {
+        fontSize: 25,
+        color: colors.lightModeText,
+        //marginBottom: 5,
+        fontFamily: 'mp-bold',
+    },
+    addModalDateText: {
+        fontSize: 25,
+        color: colors.lightModeText,
+        //marginBottom: 5,
+        fontFamily: 'mp-bold',
+
+    },
+    addModalDateEntry: {
+        width: width - 40 - 70 - 45,
+        height: 40,
+        backgroundColor: colors.lightModeBackground,
+        borderRadius: 10,
+        borderColor: colors.lightModeText,
+        borderWidth: 2,
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    addModalIcons: {
+        marginTop: 5,
+        width: 30,
+        height: 30,
+        marginRight: 15,
+    },
+    addModalEntryList: {
+        marginTop: 15,
+        flexDirection: 'row',
+        width: width - 40 - 70,
+        height: 40,
+        // backgroundColor: '#333'
+    },
     selectMonth: {
         marginTop: 20,
         width: width - 40- 70,
